@@ -21,13 +21,41 @@ const abstractAccountABI = [
   "function owner() external view returns (address)"
 ];
 
-// Provider and signer setup
-const provider = new ethers.providers.JsonRpcProvider(process.env.ETHEREUM_RPC_URL);
-const signer = process.env.PRIVATE_KEY ? new ethers.Wallet(process.env.PRIVATE_KEY, provider) : null;
+// For demo purposes, we'll use mock implementations
+// In a real app, you would use a proper provider and signer
+const isMockMode = !process.env.ETHEREUM_RPC_URL || 
+  !process.env.ETHEREUM_RPC_URL.length || 
+  process.env.ETHEREUM_RPC_URL.includes('YOUR_INFURA_KEY');
+
+// Define provider and signer with proper TypeScript types
+let provider: ethers.providers.JsonRpcProvider | null = null;
+let signer: ethers.Wallet | null = null;
+
+// Only initialize provider and signer if we're not in mock mode
+if (!isMockMode && process.env.ETHEREUM_RPC_URL) {
+  try {
+    provider = new ethers.providers.JsonRpcProvider(process.env.ETHEREUM_RPC_URL);
+    if (process.env.PRIVATE_KEY) {
+      signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+    }
+  } catch (error) {
+    console.error('Error initializing Ethereum provider:', error);
+  }
+}
+
 const accountFactoryAddress = process.env.ACCOUNT_FACTORY_ADDRESS || '';
 
 // Create contract instances
 const getAccountFactoryContract = () => {
+  if (isMockMode) {
+    // Return a mock contract for demo purposes
+    return {
+      getAccount: async () => ethers.constants.AddressZero,
+      createAccount: async () => ({ wait: async () => ({ events: [{ event: 'AccountCreated', args: { account: generateMockAddress() } }] }) }),
+      isValidAccount: async () => true
+    };
+  }
+  
   if (!signer) {
     throw new Error('Private key not configured');
   }
@@ -39,7 +67,27 @@ const getAccountFactoryContract = () => {
   return new ethers.Contract(accountFactoryAddress, accountFactoryABI, signer);
 };
 
+/**
+ * Generate a mock Ethereum address for testing purposes
+ * @returns A random Ethereum address string
+ */
+const generateMockAddress = (): string => {
+  return '0x' + Array.from({length: 40}, () => 
+    Math.floor(Math.random() * 16).toString(16)
+  ).join('');
+};
+
 const getAbstractAccountContract = (accountAddress: string) => {
+  if (isMockMode) {
+    // Return a mock contract for demo purposes
+    return {
+      executeTransaction: async () => ({ wait: async () => ({ status: 1 }) }),
+      transfer: async () => ({ wait: async () => ({ status: 1 }) }),
+      getBalance: async () => ethers.utils.parseEther('1.5'),
+      owner: async () => generateMockAddress()
+    };
+  }
+  
   if (!signer) {
     throw new Error('Private key not configured');
   }
@@ -47,15 +95,30 @@ const getAbstractAccountContract = (accountAddress: string) => {
   return new ethers.Contract(accountAddress, abstractAccountABI, signer);
 };
 
-// Create a new account for a user
+// Cache for storing created accounts to prevent duplicate requests
+const accountCache: Record<string, string> = {};
+
+/**
+ * Create a new smart contract account for a user
+ * @param ownerAddress The Ethereum address of the account owner
+ * @returns The address of the created smart contract account
+ */
 export const createAccountForUser = async (ownerAddress: string): Promise<string> => {
   try {
+    // Check if we already have this account in our cache
+    if (accountCache[ownerAddress]) {
+      console.log(`Using cached account for ${ownerAddress}: ${accountCache[ownerAddress]}`);
+      return accountCache[ownerAddress];
+    }
+    
     const accountFactory = getAccountFactoryContract();
     
     // Check if user already has an account
     const existingAccount = await accountFactory.getAccount(ownerAddress);
     
     if (existingAccount && existingAccount !== ethers.constants.AddressZero) {
+      // Store in cache and return
+      accountCache[ownerAddress] = existingAccount;
       return existingAccount;
     }
     
@@ -64,13 +127,16 @@ export const createAccountForUser = async (ownerAddress: string): Promise<string
     const receipt = await tx.wait();
     
     // Find the AccountCreated event
-    const event = receipt.events?.find(e => e.event === 'AccountCreated');
+    const event = receipt.events?.find((e: any) => e.event === 'AccountCreated');
     
     if (!event || !event.args) {
       throw new Error('Account creation failed');
     }
     
     const accountAddress = event.args.account;
+    
+    // Store in cache and return
+    accountCache[ownerAddress] = accountAddress;
     return accountAddress;
   } catch (error) {
     console.error('Error creating account:', error);

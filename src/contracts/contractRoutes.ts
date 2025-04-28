@@ -8,11 +8,14 @@ import {
   executeTransaction
 } from './contractService';
 import { ethers } from 'ethers';
+import { Request, Response } from 'express';
 
 const router = express.Router();
 
+export default router;
+
 // Create a new account for a user
-router.post('/create-account', async (req, res) => {
+router.post('/create-account', async (req: Request, res: Response) => {
   try {
     const { ownerAddress } = req.body;
     
@@ -33,7 +36,7 @@ router.post('/create-account', async (req, res) => {
 });
 
 // Get the account for a user
-router.get('/account/:ownerAddress', async (req, res) => {
+router.get('/account/:ownerAddress', async (req: Request, res: Response) => {
   try {
     const { ownerAddress } = req.params;
     
@@ -79,7 +82,7 @@ router.get('/validate/:accountAddress', async (req, res) => {
 });
 
 // Get the balance of an account
-router.get('/balance/:accountAddress', async (req, res) => {
+router.get('/balance/:accountAddress', async (req: Request, res: Response) => {
   try {
     const { accountAddress } = req.params;
     
@@ -97,7 +100,7 @@ router.get('/balance/:accountAddress', async (req, res) => {
 });
 
 // Transfer ETH from an account
-router.post('/transfer', async (req, res) => {
+router.post('/transfer', async (req: Request, res: Response) => {
   try {
     const { accountAddress, toAddress, amount } = req.body;
     
@@ -122,7 +125,7 @@ router.post('/transfer', async (req, res) => {
 });
 
 // Execute a transaction from an account
-router.post('/execute', async (req, res) => {
+router.post('/execute', async (req: Request, res: Response) => {
   try {
     const { accountAddress, toAddress, value, data } = req.body;
     

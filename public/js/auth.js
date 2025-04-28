@@ -200,9 +200,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     ).join('');
   }
 
+  // Flag to track if account creation is in progress
+  let isCreatingContractAccount = false;
+  
   // Create a smart contract account for the user
   async function createSmartContractAccount(ownerAddress) {
+    // Skip if already in progress
+    if (isCreatingContractAccount) {
+      console.log('Contract account creation already in progress, ignoring duplicate request');
+      return;
+    }
+    
     try {
+      isCreatingContractAccount = true;
+      console.log('Creating smart contract account for:', ownerAddress);
+      
+      // First check if the user already has an account
+      try {
+        const checkResponse = await fetch(`/api/contracts/account/${ownerAddress}`);
+        if (checkResponse.ok) {
+          const accountInfo = await checkResponse.json();
+          if (accountInfo.accountAddress) {
+            console.log('User already has a smart contract account:', accountInfo.accountAddress);
+            state.accountAddress = accountInfo.accountAddress;
+            return;
+          }
+        }
+      } catch (checkError) {
+        // Continue with account creation if check fails
+        console.log('No existing account found, creating new one');
+      }
+      
       const response = await fetch('/api/contracts/create-account', {
         method: 'POST',
         headers: {
@@ -223,6 +251,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.log('Smart contract account created:', result.accountAddress);
     } catch (error) {
       console.error('Error creating smart contract account:', error);
+    } finally {
+      isCreatingContractAccount = false;
     }
   }
 });

@@ -61,9 +61,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  // Flag to track if account creation is in progress
+  let isCreatingAccount = false;
+
   // Create a new account
   async function createAccount() {
+    // Prevent multiple simultaneous requests
+    if (isCreatingAccount) {
+      console.log('Account creation already in progress, ignoring duplicate request');
+      accountStatus.textContent = 'Account creation in progress...';
+      return;
+    }
+
     try {
+      isCreatingAccount = true;
       accountStatus.textContent = 'Creating new account...';
       accountStatus.className = 'status-message info';
       
@@ -85,12 +96,40 @@ document.addEventListener('DOMContentLoaded', () => {
       // Update state
       state.accountAddress = result.accountAddress;
       
-      // Refresh account info
-      refreshAccountInfo();
+      // Update UI directly instead of calling refreshAccountInfo again
+      accountStatus.textContent = 'Account created successfully';
+      accountStatus.className = 'status-message success';
+      
+      // Now get the account details
+      await getAccountDetails(state.accountAddress);
     } catch (error) {
       console.error('Error creating account:', error);
       accountStatus.textContent = 'Error creating account: ' + error.message;
       accountStatus.className = 'status-message error';
+    } finally {
+      isCreatingAccount = false;
+    }
+  }
+  
+  // Get account details
+  async function getAccountDetails(accountAddress) {
+    try {
+      ownerAddressElement.textContent = state.user.ethAddress;
+      accountAddressElement.textContent = accountAddress;
+      
+      // Get balance
+      const balanceResponse = await fetch(`/api/contracts/balance/${accountAddress}`);
+      if (balanceResponse.ok) {
+        const balanceInfo = await balanceResponse.json();
+        accountBalanceElement.textContent = balanceInfo.balance;
+      } else {
+        accountBalanceElement.textContent = '0';
+      }
+      
+      accountDetails.classList.remove('hidden');
+      accountActions.classList.remove('hidden');
+    } catch (error) {
+      console.error('Error getting account details:', error);
     }
   }
 
