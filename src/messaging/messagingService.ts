@@ -119,6 +119,28 @@ export const sendMessage = async (
   }
 };
 
+// Get messages from a conversation
+export const getMessages = async (client: Client, peerAddress: string) => {
+  try {
+    // Get the conversation
+    const conversation = await client.conversations.newConversation(peerAddress);
+    
+    // List messages
+    const messages = await conversation.messages();
+    
+    // Format messages for response
+    return messages.map(message => ({
+      id: message.id,
+      senderAddress: message.senderAddress,
+      sent: message.sent,
+      content: message.content,
+    }));
+  } catch (error) {
+    console.error('Error getting messages:', error);
+    throw error;
+  }
+};
+
 // List messages in a conversation
 export const listMessages = async (client: Client, peerAddress: string) => {
   try {

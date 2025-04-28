@@ -3,7 +3,7 @@ import path from 'path';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import { createAccountForUser } from './contracts/contractService';
-import { getXmtpClient, listConversations, startConversation, sendMessage } from './messaging/messagingService';
+import { getXmtpClient, listConversations, startConversation, sendMessage, getMessages } from './messaging/messagingService';
 
 // Load environment variables
 dotenv.config();
@@ -202,6 +202,27 @@ app.post('/api/messaging/message/send', async (req: any, res: any) => {
   } catch (error: any) {
     console.error('Error sending message:', error);
     return res.status(500).json({ error: 'Failed to send message: ' + error.message });
+  }
+});
+
+app.post('/api/messaging/messages', async (req: any, res: any) => {
+  try {
+    const { privateKey, peerAddress } = req.body;
+    
+    if (!privateKey || !peerAddress) {
+      return res.status(400).json({ error: 'Private key and peer address are required' });
+    }
+    
+    const client = await getXmtpClient(privateKey);
+    const messages = await getMessages(client, peerAddress);
+    
+    return res.json({
+      success: true,
+      messages
+    });
+  } catch (error: any) {
+    console.error('Error getting messages:', error);
+    return res.status(500).json({ error: 'Failed to get messages: ' + error.message });
   }
 });
 
