@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web3 Passkey App</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Web3 Passkey App</h1>
+      <div id="user-status">
+        <span id="username-display">Not logged in</span>
+        <button id="logout-button" class="hidden">Logout</button>
+      </div>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-button active" data-tab="auth">Authentication</button>
+      <button class="tab-button" data-tab="account">Smart Contract Account</button>
+      <button class="tab-button" data-tab="messaging">XMTP Messaging</button>
+    </div>
+
+    <div class="tab-content">
+      <!-- Authentication Tab -->
+      <div id="auth" class="tab-panel active">
+        <div class="auth-container">
+          <div class="auth-form">
+            <h2>Register or Login with Passkey</h2>
+            <div class="form-group">
+              <label for="username">Username:</label>
+              <input type="text" id="username" placeholder="Enter your username">
+            </div>
+            <div class="button-group">
+              <button id="register-button" class="primary-button">Register Passkey</button>
+              <button id="login-button" class="secondary-button">Login with Passkey</button>
+            </div>
+            <div id="auth-status" class="status-message"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Smart Contract Account Tab -->
+      <div id="account" class="tab-panel">
+        <div class="account-container">
+          <div class="account-info">
+            <h2>Your Smart Contract Account</h2>
+            <div id="account-status" class="status-message">Please authenticate first</div>
+            <div id="account-details" class="hidden">
+              <div class="info-group">
+                <label>Owner Address:</label>
+                <span id="owner-address"></span>
+              </div>
+              <div class="info-group">
+                <label>Account Address:</label>
+                <span id="account-address"></span>
+              </div>
+              <div class="info-group">
+                <label>Balance:</label>
+                <span id="account-balance"></span> ETH
+              </div>
+            </div>
+          </div>
+          <div class="account-actions hidden" id="account-actions">
+            <h3>Transfer ETH</h3>
+            <div class="form-group">
+              <label for="recipient-address">Recipient Address:</label>
+              <input type="text" id="recipient-address" placeholder="0x...">
+            </div>
+            <div class="form-group">
+              <label for="transfer-amount">Amount (ETH):</label>
+              <input type="number" id="transfer-amount" placeholder="0.01" step="0.001" min="0">
+            </div>
+            <button id="transfer-button" class="primary-button">Transfer</button>
+            <div id="transfer-status" class="status-message"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- XMTP Messaging Tab -->
+      <div id="messaging" class="tab-panel">
+        <div class="messaging-container">
+          <div class="messaging-setup">
+            <h2>XMTP Messaging</h2>
+            <div id="messaging-status" class="status-message">Please authenticate first</div>
+            <div id="messaging-init" class="hidden">
+              <button id="init-xmtp-button" class="primary-button">Initialize XMTP</button>
+            </div>
+          </div>
+          <div class="messaging-interface hidden" id="messaging-interface">
+            <div class="conversations">
+              <h3>Conversations</h3>
+              <div class="form-group">
+                <label for="new-conversation-address">New Conversation:</label>
+                <input type="text" id="new-conversation-address" placeholder="0x...">
+                <button id="start-conversation-button" class="secondary-button">Start</button>
+              </div>
+              <ul id="conversation-list" class="list"></ul>
+            </div>
+            <div class="messages">
+              <h3 id="current-conversation">No conversation selected</h3>
+              <div id="message-list" class="message-list"></div>
+              <div class="message-input">
+                <input type="text" id="message-input" placeholder="Type your message...">
+                <button id="send-message-button" class="primary-button">Send</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/account.js"></script>
+  <script src="js/messaging.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

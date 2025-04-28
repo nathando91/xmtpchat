@@ -1,0 +1,43 @@
+{
+  "name": "xmtp-web3-passkey",
+  "version": "1.0.0",
+  "description": "Web3 application with Passkey authentication, Smart Contract Accounts, and XMTP messaging",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/app.js",
+    "dev": "nodemon --exec ts-node src/app.ts",
+    "build": "tsc",
+    "deploy-contract": "ts-node src/contracts/deploy.ts",
+    "setup": "ts-node src/utils/setupTestData.ts",
+    "test-api": "ts-node src/utils/testApi.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "web3",
+    "passkey",
+    "webauthn",
+    "xmtp",
+    "smart-contract"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@simplewebauthn/browser": "^13.1.0",
+    "@simplewebauthn/server": "^13.1.1",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.15.2",
+    "@xmtp/xmtp-js": "^13.0.4",
+    "axios": "^1.9.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "ethers": "^5.7.2",
+    "express": "^5.1.0",
+    "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "@types/express-serve-static-core": "^5.0.6",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2"
+  }
+}

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web3 Passkey App - Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      color: #3498db;
+    }
+    .test-section {
+      margin-bottom: 30px;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    .result {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-left: 3px solid #ddd;
+      white-space: pre-wrap;
+    }
+    input {
+      padding: 8px;
+      margin-right: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: 250px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Web3 Passkey App - API Test</h1>
+  
+  <div class="test-section">
+    <h2>API Connection Test</h2>
+    <button id="test-api">Test API Connection</button>
+    <div id="api-result" class="result">Results will appear here...</div>
+  </div>
+
+  <div class="test-section">
+    <h2>Passkey Registration</h2>
+    <input type="text" id="username" placeholder="Enter username">
+    <button id="register-passkey">Register Passkey</button>
+    <div id="register-result" class="result">Results will appear here...</div>
+  </div>
+
+  <div class="test-section">
+    <h2>Passkey Authentication</h2>
+    <input type="text" id="auth-username" placeholder="Enter username">
+    <button id="authenticate-passkey">Authenticate with Passkey</button>
+    <div id="auth-result" class="result">Results will appear here...</div>
+  </div>
+
+  <script>
+    // Test API Connection
+    document.getElementById('test-api').addEventListener('click', async () => {
+      const resultElement = document.getElementById('api-result');
+      resultElement.textContent = 'Testing API connection...';
+      
+      try {
+        const response = await fetch('/api/test');
+        const data = await response.json();
+        resultElement.textContent = `API Response: ${JSON.stringify(data, null, 2)}`;
+      } catch (error) {
+        resultElement.textContent = `Error: ${error.message}`;
+      }
+    });
+
+    // Register Passkey
+    document.getElementById('register-passkey').addEventListener('click', async () => {
+      const username = document.getElementById('username').value.trim();
+      const resultElement = document.getElementById('register-result');
+      
+      if (!username) {
+        resultElement.textContent = 'Please enter a username';
+        return;
+      }
+      
+      resultElement.textContent = 'Requesting registration options...';
+      
+      try {
+        // This is a simplified test - in a real app, you would use the WebAuthn API
+        const response = await fetch('/api/test');
+        const data = await response.json();
+        resultElement.textContent = `API is working! In a real implementation, this would register a passkey for user: ${username}\n\nAPI Response: ${JSON.stringify(data, null, 2)}`;
+      } catch (error) {
+        resultElement.textContent = `Error: ${error.message}`;
+      }
+    });
+
+    // Authenticate with Passkey
+    document.getElementById('authenticate-passkey').addEventListener('click', async () => {
+      const username = document.getElementById('auth-username').value.trim();
+      const resultElement = document.getElementById('auth-result');
+      
+      if (!username) {
+        resultElement.textContent = 'Please enter a username';
+        return;
+      }
+      
+      resultElement.textContent = 'Requesting authentication options...';
+      
+      try {
+        // This is a simplified test - in a real app, you would use the WebAuthn API
+        const response = await fetch('/api/test');
+        const data = await response.json();
+        resultElement.textContent = `API is working! In a real implementation, this would authenticate user: ${username} with a passkey\n\nAPI Response: ${JSON.stringify(data, null, 2)}`;
+      } catch (error) {
+        resultElement.textContent = `Error: ${error.message}`;
+      }
+    });
+  </script>
+</body>
+</html>
