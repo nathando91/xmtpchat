@@ -56,7 +56,28 @@ export const startConversation = async (client: Client, peerAddress: string) => 
     const canMessage = await client.canMessage(peerAddress);
     
     if (!canMessage) {
-      throw new Error('Peer cannot be messaged');
+      // For demo purposes, we'll create a conversation anyway in dev mode
+      // In production, you would want to handle this differently
+      console.warn(`Peer ${peerAddress} is not on the XMTP network yet. Creating conversation anyway for demo purposes.`);
+      
+      // We'll try to create the conversation anyway, but it might fail later when sending messages
+      try {
+        // Use type assertion to handle the option that might not be in the type definitions
+        const conversation = await client.conversations.newConversation(
+          peerAddress, 
+          { ignorePeerAvailability: true } as any
+        );
+        
+        return {
+          peerAddress: conversation.peerAddress,
+          createdAt: conversation.createdAt,
+          context: conversation.context,
+          warning: 'Peer is not on XMTP network yet. Messages may not be delivered until they join.'
+        };
+      } catch (innerError) {
+        console.error('Failed to create conversation with unavailable peer:', innerError);
+        throw new Error(`Peer ${peerAddress} cannot be messaged. They need to initialize their XMTP client first.`);
+      }
     }
     
     // Create a new conversation

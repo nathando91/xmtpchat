@@ -169,12 +169,22 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to start conversation');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to start conversation');
       }
 
       const result = await response.json();
       const conversation = result.conversation;
+
+      // Check if there's a warning about the peer not being on XMTP
+      if (conversation.warning) {
+        // Show warning to the user but continue with the conversation
+        messagingStatus.textContent = conversation.warning;
+        messagingStatus.className = 'status-message warning';
+      } else {
+        messagingStatus.textContent = 'Conversation started successfully';
+        messagingStatus.className = 'status-message success';
+      }
 
       // Select the new conversation
       selectConversation(conversation.peerAddress);
@@ -186,7 +196,13 @@ document.addEventListener('DOMContentLoaded', () => {
       loadConversations();
     } catch (error) {
       console.error('Error starting conversation:', error);
-      alert('Error starting conversation: ' + error.message);
+      
+      // Provide a more helpful message if the peer cannot be messaged
+      if (error.message.includes('Peer cannot be messaged')) {
+        alert('The address you entered is not on the XMTP network yet. They need to initialize their XMTP client first.');
+      } else {
+        alert('Error starting conversation: ' + error.message);
+      }
     }
   }
 

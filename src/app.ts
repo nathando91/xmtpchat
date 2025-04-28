@@ -3,6 +3,7 @@ import path from 'path';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import { createAccountForUser } from './contracts/contractService';
+import { getXmtpClient, listConversations, startConversation, sendMessage } from './messaging/messagingService';
 
 // Load environment variables
 dotenv.config();
@@ -118,6 +119,90 @@ app.get('/test', function(req, res) {
 // Use a regex pattern to match all routes except those that start with /api or /test
 app.get(/^(?!\/api|\/test).*$/, function(req, res) {
   res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+// XMTP Messaging routes
+app.post('/api/messaging/init', async (req: any, res: any) => {
+  try {
+    const { privateKey } = req.body;
+    
+    if (!privateKey) {
+      return res.status(400).json({ error: 'Private key is required' });
+    }
+    
+    const client = await getXmtpClient(privateKey);
+    
+    return res.json({
+      success: true,
+      address: client.address
+    });
+  } catch (error: any) {
+    console.error('Error initializing XMTP client:', error);
+    return res.status(500).json({ error: 'Failed to initialize XMTP client: ' + error.message });
+  }
+});
+
+app.post('/api/messaging/conversations', async (req: any, res: any) => {
+  try {
+    const { privateKey } = req.body;
+    
+    if (!privateKey) {
+      return res.status(400).json({ error: 'Private key is required' });
+    }
+    
+    const client = await getXmtpClient(privateKey);
+    const conversations = await listConversations(client);
+    
+    return res.json({
+      success: true,
+      conversations
+    });
+  } catch (error: any) {
+    console.error('Error listing conversations:', error);
+    return res.status(500).json({ error: 'Failed to list conversations: ' + error.message });
+  }
+});
+
+app.post('/api/messaging/conversation/new', async (req: any, res: any) => {
+  try {
+    const { privateKey, peerAddress } = req.body;
+    
+    if (!privateKey || !peerAddress) {
+      return res.status(400).json({ error: 'Private key and peer address are required' });
+    }
+    
+    const client = await getXmtpClient(privateKey);
+    const conversation = await startConversation(client, peerAddress);
+    
+    return res.json({
+      success: true,
+      conversation
+    });
+  } catch (error: any) {
+    console.error('Error starting conversation:', error);
+    return res.status(500).json({ error: 'Failed to start conversation: ' + error.message });
+  }
+});
+
+app.post('/api/messaging/message/send', async (req: any, res: any) => {
+  try {
+    const { privateKey, peerAddress, content } = req.body;
+    
+    if (!privateKey || !peerAddress || !content) {
+      return res.status(400).json({ error: 'Private key, peer address, and content are required' });
+    }
+    
+    const client = await getXmtpClient(privateKey);
+    const message = await sendMessage(client, peerAddress, content);
+    
+    return res.json({
+      success: true,
+      message
+    });
+  } catch (error: any) {
+    console.error('Error sending message:', error);
+    return res.status(500).json({ error: 'Failed to send message: ' + error.message });
+  }
 });
 
 // Start the server

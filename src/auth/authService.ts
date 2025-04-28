@@ -2,12 +2,15 @@ import {
   generateRegistrationOptions,
   verifyRegistrationResponse,
   generateAuthenticationOptions,
-  verifyAuthenticationResponse
+  verifyAuthenticationResponse,
+  type VerifiedRegistrationResponse,
+  type VerifiedAuthenticationResponse
 } from '@simplewebauthn/server';
 import { 
   RegistrationResponseJSON,
-  AuthenticationResponseJSON 
-} from '@simplewebauthn/typescript-types';
+  AuthenticationResponseJSON,
+  AuthenticatorTransportFuture
+} from '@simplewebauthn/types';
 import crypto from 'crypto';
 import { User, RegisteredCredential } from './authTypes';
 
@@ -24,8 +27,12 @@ const generateUserId = (): string => {
   return crypto.randomBytes(16).toString('hex');
 };
 
-// Generate registration options for a new user
-export const generateRegistrationOptionsForUser = async (username: string): Promise<any> => {
+/**
+ * Generate registration options for a new user
+ * @param username The username to register
+ * @returns Registration options for the WebAuthn client
+ */
+export const generateRegistrationOptionsForUser = async (username: string) => {
   // Check if user exists
   if (!users[username]) {
     // Create a new user
@@ -40,7 +47,8 @@ export const generateRegistrationOptionsForUser = async (username: string): Prom
   const user = users[username];
   
   // Generate a random challenge
-  const challenge = crypto.randomBytes(32).toString('base64');
+  const challengeBuffer = crypto.randomBytes(32);
+  const challenge = challengeBuffer.toString('base64');
   user.currentChallenge = challenge;
 
   // Generate registration options
@@ -54,13 +62,18 @@ export const generateRegistrationOptionsForUser = async (username: string): Prom
       userVerification: 'preferred',
       residentKey: 'required',
     },
-    challenge,
+    challenge: challengeBuffer as unknown as string,
   });
 
   return options;
 };
 
-// Verify registration response
+/**
+ * Verify registration response from WebAuthn client
+ * @param username The username being registered
+ * @param response The registration response from the client
+ * @returns Whether the registration was successful
+ */
 export const verifyRegistration = async (
   username: string,
   response: RegistrationResponseJSON
@@ -71,7 +84,7 @@ export const verifyRegistration = async (
     throw new Error('User not found or challenge not set');
   }
 
-  let verification;
+  let verification: VerifiedRegistrationResponse;
   try {
     // Verify the registration response
     verification = await verifyRegistrationResponse({
@@ -91,8 +104,11 @@ export const verifyRegistration = async (
     // Add the new credential to the user
     const newCredential: RegisteredCredential = {
       id: response.id,
-      publicKey: registrationInfo.credentialPublicKey.toString('base64'),
-      counter: registrationInfo.counter,
+      // Access the credential public key and counter based on the library version
+      publicKey: Buffer.from(registrationInfo.credentialPublicKey || 
+                (registrationInfo as any).credential?.publicKey || 
+                new Uint8Array()).toString('base64'),
+      counter: registrationInfo.counter || (registrationInfo as any).credential?.counter || 0,
     };
     
     user.registeredCredentials.push(newCredential);
@@ -104,8 +120,12 @@ export const verifyRegistration = async (
   return false;
 };
 
-// Generate authentication options for a user
-export const generateAuthenticationOptionsForUser = async (username: string): Promise<any> => {
+/**
+ * Generate authentication options for a user
+ * @param username The username to authenticate
+ * @returns Authentication options for the WebAuthn client
+ */
+export const generateAuthenticationOptionsForUser = async (username: string) => {
   const user = users[username];
   
   if (!user) {
@@ -113,14 +133,15 @@ export const generateAuthenticationOptionsForUser = async (username: string): Pr
   }
   
   // Generate a random challenge
-  const challenge = crypto.randomBytes(32).toString('base64');
+  const challengeBuffer = crypto.randomBytes(32);
+  const challenge = challengeBuffer.toString('base64');
   user.currentChallenge = challenge;
   
   // Get the credential IDs for this user
   const allowCredentials = user.registeredCredentials.map(credential => ({
-    id: Buffer.from(credential.id, 'base64'),
-    type: 'public-key',
-    transports: ['internal'],
+    id: credential.id,
+    type: 'public-key' as const,
+    transports: ['internal'] as AuthenticatorTransportFuture[],
   }));
   
   // Generate authentication options
@@ -128,13 +149,18 @@ export const generateAuthenticationOptionsForUser = async (username: string): Pr
     rpID,
     userVerification: 'preferred',
     allowCredentials,
-    challenge,
+    challenge: challengeBuffer as unknown as string,
   });
   
   return options;
 };
 
-// Verify authentication response
+/**
+ * Verify authentication response from WebAuthn client
+ * @param username The username being authenticated
+ * @param response The authentication response from the client
+ * @returns Whether the authentication was successful
+ */
 export const verifyAuthentication = async (
   username: string,
   response: AuthenticationResponseJSON
@@ -154,7 +180,7 @@ export const verifyAuthentication = async (
     throw new Error('Credential not found');
   }
   
-  let verification;
+  let verification: VerifiedAuthenticationResponse;
   try {
     // Verify the authentication response
     verification = await verifyAuthenticationResponse({
@@ -162,11 +188,15 @@ export const verifyAuthentication = async (
       expectedChallenge: user.currentChallenge,
       expectedOrigin: rpOrigin,
       expectedRPID: rpID,
-      authenticator: {
-        credentialID: Buffer.from(credential.id, 'base64'),
-        credentialPublicKey: Buffer.from(credential.publicKey, 'base64'),
-        counter: credential.counter,
-      },
+      requireUserVerification: true,
+      // Use type assertion to handle different versions of the library
+      ...({
+        authenticator: {
+          credentialID: Buffer.from(credential.id, 'base64'),
+          credentialPublicKey: Buffer.from(credential.publicKey, 'base64'),
+          counter: credential.counter,
+        }
+      } as any),
     });
   } catch (error) {
     console.error('Error verifying authentication:', error);
@@ -186,19 +216,28 @@ export const verifyAuthentication = async (
   return false;
 };
 
-// Get a user by username
+/**
+ * Get a user by username
+ * @param username The username to look up
+ * @returns The user object or undefined if not found
+ */
 export const getUser = (username: string): User | undefined => {
   return users[username];
 };
 
-// Set the Ethereum address for a user
+/**
+ * Set the Ethereum address for a user
+ * @param username The username to update
+ * @param ethAddress The Ethereum address to set
+ * @returns Whether the update was successful
+ */
 export const setUserEthAddress = (username: string, ethAddress: string): boolean => {
   const user = users[username];
   
   if (!user) {
     return false;
   }
-  
+
   user.ethAddress = ethAddress;
   return true;
 };

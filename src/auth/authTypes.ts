@@ -1,7 +1,7 @@
 import { 
   RegistrationResponseJSON,
   AuthenticationResponseJSON 
-} from '@simplewebauthn/typescript-types';
+} from '@simplewebauthn/types';
 
 export interface User {
   id: string;
